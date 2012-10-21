@@ -6,6 +6,11 @@ var fs = require('fs');
 var PORT = process.env.PORT;
 var IP = process.env.IP;
 
+function lerp(x0, x1, t)
+{
+    return x0 + (x1-x0) * t;
+}
+
 function mandel(x, y, k)
 {
     var zi = 0.0;
@@ -50,7 +55,7 @@ var map = [
     [ 0.9, 0x00, 0xff, 0x00 ],
     [ 1.0, 0x00, 0x00, 0x00 ]
 ];
-    
+
 function handleMandelbrot(url, request, response)
 {
     var width = parseInt(url.query.width, 10);
@@ -91,9 +96,9 @@ function handleMandelbrot(url, request, response)
                     
                     if(h < i1) {
                         var p = (h - i0) / (i1 - i0);
-                        r = r0 + (r1 - r0) * p;
-                        g = g0 + (g1 - g0) * p;
-                        b = b0 + (b1 - b0) * p;
+                        r = lerp(r0, r1, p);
+                        g = lerp(g0, g1, p);
+                        b = lerp(b0, b1, p);
                         break;
                     }
                     else {
@@ -139,7 +144,9 @@ function handleCMandelbrot(url, request, response)
     var scale = parseFloat(url.query.scale);
     var k = parseInt(url.query.k, 10);
         
-    var cmd = './mandelbrot ' + width + ' ' + height + ' ' + cx + ' ' + cy + ' ' + scale + ' ' + k + ' | convert -equalize -size ' + width + 'x' + height + ' -depth 8 rgb:- png:-';
+    var mandelcmd = ['./mandelbrot', width, height, cx, cy, scale, k].join(' ');
+    var convertcmd = ['convert', '-size', width+'x'+height, '-depth', 8, 'rgb:-', 'png:-'].join(' ');
+    var cmd = [mandelcmd, '|', convertcmd].join(' ');
     //console.log('Running: ' + cmd);
     var convert = spawn('/bin/sh', ['-c', cmd]);
 

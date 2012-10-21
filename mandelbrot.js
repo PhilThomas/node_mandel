@@ -10,16 +10,19 @@ function mandel(x, y, k)
 {
     var zi = 0.0;
     var zq = 0.0;
+    var zi2 = 0.0;
+    var zq2 = 0.0;
+    
     for(var i = 0; i < k; i++) {
-        var ztmp = zi*zi - zq*zq + x;
+        if(zi2+zq2 >= 4) return i/k;
         zq = 2*zi*zq + y;
-        zi = ztmp;
-        
-        if((zi*zi + zq*zq) >= 4.0)
-            return i;
+        zi = zi2 - zq2 + x;
+        zi2 = zi*zi;
+        zq2 = zq*zq;
+        i++;
     }
     
-    return k;
+    return undefined;
 }
 
 function sendFile(filename, contentType)
@@ -34,6 +37,20 @@ function sendFile(filename, contentType)
     }
 }
 
+var map = [
+    [ 0.0, 0xff, 0x00, 0x00 ],
+    [ 0.1, 0x00, 0xff, 0x00 ],
+    [ 0.2, 0x00, 0x00, 0xff ],
+    [ 0.3, 0xff, 0xff, 0x00 ],
+    [ 0.4, 0xff, 0x00, 0x00 ],
+    [ 0.5, 0x00, 0xff, 0x00 ],
+    [ 0.6, 0x00, 0x00, 0xff ],
+    [ 0.7, 0xff, 0xff, 0x00 ],
+    [ 0.8, 0xff, 0x00, 0x00 ],
+    [ 0.9, 0x00, 0xff, 0x00 ],
+    [ 1.0, 0x00, 0x00, 0x00 ]
+];
+    
 function handleMandelbrot(url, request, response)
 {
     var width = parseInt(url.query.width, 10);
@@ -50,13 +67,47 @@ function handleMandelbrot(url, request, response)
     var y0 = cy + 4/(scale*2);
     var dx = 4/(scale*width);
     var dy = 4/(scale*height);
+    var r, g, b;
     
     for(var y = 0; y < height; y++) {
         for(var x = 0; x < width; x++) {
-            var c = ((1<<24)-1) * (mandel(x0+x*dx, y0-y*dy, k) / k);
-            buf[i++] = ((c >> 0) & 0xff);
-            buf[i++] = ((c >> 8) & 0xff);
-            buf[i++] = ((c >> 16) & 0xff);
+            var h = mandel(x0+x*dx, y0-y*dy, k);
+            
+            if(h === undefined) {
+                r = g = b = 0;
+            }
+            else {
+                var i0;
+                var r0;
+                var g0;
+                var b0;
+                
+                for(var t in map) {
+                    var m = map[t];
+                    var i1 = m[0];
+                    var r1 = m[1];
+                    var g1 = m[2];
+                    var b1 = m[3];
+                    
+                    if(h < i1) {
+                        var p = (h - i0) / (i1 - i0);
+                        r = r0 + (r1 - r0) * p;
+                        g = g0 + (g1 - g0) * p;
+                        b = b0 + (b1 - b0) * p;
+                        break;
+                    }
+                    else {
+                        i0 = i1;
+                        r0 = r1;
+                        g0 = g1;
+                        b0 = b1;
+                    }
+                }                
+            }
+            
+            buf[i++] = r;
+            buf[i++] = g;
+            buf[i++] = b;
         }
     }
     
@@ -79,10 +130,37 @@ function handleMandelbrot(url, request, response)
     convert.stdin.end();
 }
 
+function handleCMandelbrot(url, request, response)
+{
+    var width = parseInt(url.query.width, 10);
+    var height = parseInt(url.query.height, 10);
+    var cx = parseFloat(url.query.cx);
+    var cy = parseFloat(url.query.cy);
+    var scale = parseFloat(url.query.scale);
+    var k = parseInt(url.query.k, 10);
+        
+    var cmd = './mandelbrot ' + width + ' ' + height + ' ' + cx + ' ' + cy + ' ' + scale + ' ' + k + ' | convert -equalize -size ' + width + 'x' + height + ' -depth 8 rgb:- png:-';
+    //console.log('Running: ' + cmd);
+    var convert = spawn('/bin/sh', ['-c', cmd]);
+
+    response.writeHead(200, {'Content-Type': 'image/png'});
+
+    // Write the output of convert straight to the response
+	convert.stdout.on('data', function(data) {
+		response.write(data);
+	});
+
+	// When we're done rendering, we're done
+	convert.on('exit', function(code) {
+		response.end();
+	});
+}
+
 var handlers = {
     '/': sendFile('index.html', 'text/html'),
     '/mandel.js': sendFile('mandel.js', 'text/javascript'),
-    '/mandelbrot.png': handleMandelbrot
+    '/mandelbrot.png': handleMandelbrot,
+    '/cmandelbrot.png': handleCMandelbrot
 };
     
 http.createServer(function (request, response) {

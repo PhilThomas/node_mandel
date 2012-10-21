@@ -7,7 +7,7 @@ var k;
 
 function show_mandel(element)
 {
-    var src = 'mandelbrot.png' + '?' +
+    var src = 'cmandelbrot.png' + '?' +
         'width=' + width + '&' +
         'height=' + height + '&' +
         'cx=' + cx + '&' +

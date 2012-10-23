@@ -1,50 +1,47 @@
-var width ;
-var height;
-var cx;
-var cy;
-var scale;
-var k;
+var width = 640;
+var height = 640;
+var cx = 0.0;
+var cy = 0.0;
+var scale = 1.0;
+var k = 1000;
 
-function show_mandel(element)
+$(document).ready(function () {
+    $('body').append("<img id='mandel'/>");
+    
+    $('#mandel').load(function() {
+        $('#mandel').fadeIn();
+    });
+    
+    $('#mandel').click(function(event) {
+        var pos_x = event.pageX - $(this).position().left;
+        var pos_y = event.pageY - $(this).position().top;
+        
+        var x0 = cx - 4/(scale*2);
+        var y0 = cy + 4/(scale*2);
+        var dx = 4/(scale*width);
+        var dy = 4/(scale*height);
+        
+        cx = x0+pos_x*dx;
+        cy = y0-pos_y*dy;
+        
+        scale *= 2;
+        //k = 10000;
+        show_mandel();
+    });
+    
+    show_mandel();
+});
+
+function show_mandel()
 {
-    var src = 'cmandelbrot.png' + '?' +
-        'width=' + width + '&' +
-        'height=' + height + '&' +
-        'cx=' + cx + '&' +
-        'cy=' + cy + '&' +
-        'scale=' + scale + '&' +
-        'k=' + k;
-    element.innerHTML='<img src="' + src + '"/>';
-}
-
-function load_it(event, name) {
-    var element = document.getElementById(name);
-
-    width = 640;
-    height = 640;
-    cx = 0.0;
-    cy = 0.0;
-    scale = 1.0;
-    k = 1000;
-    
-    show_mandel(element);
-}
-
-function point_it(event, name){
-    var element = document.getElementById(name);
-    
-    var pos_x = event.offsetX?(event.offsetX):event.pageX-element.offsetLeft;
-    var pos_y = event.offsetY?(event.offsetY):event.pageY-element.offsetTop;
-    
-    var x0 = cx - 4/(scale*2);
-    var y0 = cy + 4/(scale*2);
-    var dx = 4/(scale*width);
-    var dy = 4/(scale*height);
-    
-    cx = x0+pos_x*dx;
-    cy = y0-pos_y*dy;
-    
-    scale *= 2;
-    //k = 10000;
-    show_mandel(element);
+    var src = 'cmandelbrot.png' + '?' + $.param({
+        width: width,
+        height: height,
+        cx: cx,
+        cy: cy,
+        scale: scale,
+        k: k});
+        
+    $('#mandel').fadeOut();
+    $('#mandel').attr('src', src);
 }

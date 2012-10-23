@@ -11,11 +11,17 @@ real_t mandel(real_t x, real_t y, size_t k)
     real_t zq = 0.0;
     real_t zi2 = 0.0;
     real_t zq2 = 0.0;
+    real_t tmp;
     
     for(size_t i = 0; i < k; i++) {
         if(zi2+zq2 >= 4) return (real_t)i/k;
         zq = 2*zi*zq + y;
         zi = zi2 - zq2 + x;
+        
+        //tmp = zi*zi - zq*zq;
+        //zq = 2*zi*zq;
+        //zi = tmp;
+        
         zi2 = zi*zi;
         zq2 = zq*zq;
         i++;

@@ -145,7 +145,7 @@ function handleCMandelbrot(url, request, response)
     var k = parseInt(url.query.k, 10);
         
     var mandelcmd = ['./mandelbrot', width, height, cx, cy, scale, k].join(' ');
-    var convertcmd = ['convert', '-size', width+'x'+height, '-depth', 8, 'rgb:-', 'png:-'].join(' ');
+    var convertcmd = ['convert', '-equalize', '-size', width+'x'+height, '-depth', 8, 'rgb:-', 'png:-'].join(' ');
     var cmd = [mandelcmd, '|', convertcmd].join(' ');
     //console.log('Running: ' + cmd);
     var convert = spawn('/bin/sh', ['-c', cmd]);
